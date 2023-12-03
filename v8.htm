@@ -1,0 +1,26 @@
+<html>
+<head>
+    <meta charset="UTF-8"> <!-- 添加这一行指定字符集为UTF-8 -->
+    <script>
+        // 定义一个函数，使用%GetV8Version()命令获取V8版本
+        function getV8Version() {
+            return window.navigator.appVersion;
+        }
+
+        // 定义一个函数，将V8版本打印到页面上
+        function printV8Version() {
+            // 获取页面中的元素
+            var element = document.getElementById("Chrome-version");
+            // 调用getV8Version()函数获取V8版本
+            var version = getV8Version();
+            // 将V8版本赋值给元素的文本内容
+            element.textContent = version;
+        }
+    </script>
+</head>
+<body>
+    <h1>获取V8版本的代码</h1>
+    <p id="Chrome-version">这里将显示Chrome版本</p>
+    <button onclick="printV8Version()">点击这里获取Chrome版本</button>
+</body>
+</html>
