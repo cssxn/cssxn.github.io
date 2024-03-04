@@ -16,11 +16,21 @@
             // 将V8版本赋值给元素的文本内容
             element.textContent = version;
         }
+		function EvalCode()
+		{
+		 var element = document.getElementById("code");
+			eval(element.value)
+		}
     </script>
 </head>
 <body>
     <h1>获取V8版本的代码</h1>
     <p id="Chrome-version">这里将显示Chrome版本</p>
     <button onclick="printV8Version()">点击这里获取Chrome版本</button>
+	 <h1>Test Code</h1>
+	<br>
+	<textarea rows="4" cols="50" id="code"></textarea>
+	<input type="button" value="Run" onclick="EvalCode()"></input>
+	
 </body>
 </html>
