@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Bot Trace</title>
-    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-5">
@@ -57,12 +57,15 @@
                     <h5>Copy Message</h5>
                     <div class="mb-3">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="source-chat-id" placeholder="Enter source chat id" required>
-                            <input type="text" class="form-control" id="target-chat-id" placeholder="Enter target chat id" required>
+                            <input type="text" class="form-control" id="source-chat-id" placeholder="From chat_id" required>
+                            <input type="text" class="form-control" id="target-chat-id" placeholder="Copy To chat_id" required>
+                            <input type="text" class="form-control" id="msg-start-id" value="1" placeholder="Message Start ID" required>
+                            <input type="text" class="form-control" id="msg-end-id" value="1000" placeholder="Message End ID" required>
                             <button type="button" class="btn btn-warning" onclick="copyMessages()">Copy Messages</button>
                         </div>
                     </div>
                 </div>
+
 
             </div>
         </div>
@@ -135,16 +138,17 @@
             const botToken = document.getElementById('bot_token').value;
             const sourceChatId = document.getElementById('source-chat-id').value;
             const targetChatId = document.getElementById('target-chat-id').value;
-    
+            const messageStartId = document.getElementById('msg-start-id').value;
+            const messageEndId = document.getElementById('msg-end-id').value;
 
-            if (!botToken || !sourceChatId || !targetChatId) {
+            if (!botToken || !sourceChatId || !targetChatId || !messageStartId || !messageEndId) {
                 alert("Please fill in all fields.");
                 return;
             }
 
             const step = 50;
 
-            for (let msg_id = 1; msg_id < 1000; msg_id += step) {
+            for (let msg_id = messageStartId; msg_id < messageEndId; msg_id += step) {
                 const msg_ids = Array.from({ length: step }, (_, index) => msg_id + index);
                 try {
                     console.log(msg_id, msg_ids);
@@ -167,8 +171,6 @@
                     continue;
                 }
             }
-
-           
         }
     </script>
 </body>
