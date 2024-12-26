@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Bot Trace</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header text-center fs-4">
+                Telegram Bot Trace
+            </div>
+            <div class="card-body">
+                <!-- Bot Token 输入框和按钮合并 -->
+                <div class="mb-3">
+                    <label for="bot_token" class="form-label">Bot Token</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="bot_token" placeholder="Enter bot token" required>
+                        <button type="button" class="btn btn-info" onclick="getBotInfoAndMessages()">Get Bot Info & Messages</button>
+                    </div>
+                </div>
+
+                <!-- 显示 Bot 名称 -->
+                <div id="bot-info" class="mt-4">
+                    <h5 class="fs-5">Bot Information</h5>
+                    <div class="alert alert-info">
+                        <strong>Bot Username:</strong> <span id="bot-username">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- 消息表格 -->
+                <table class="table table-striped mt-4" id="messages-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>From Chat ID</th>
+                            <th>Username</th>
+                            <th>Type</th>
+                            <th>Message Text</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 消息行会在这里填充 -->
+                    </tbody>
+                </table>
+
+                <!-- 错误提示 -->
+                <div id="error-alert" class="alert alert-danger mt-3" role="alert" style="display:none;">
+                    An error occurred. Please try again!
+                </div>
+
+                <!-- 拷贝消息功能 -->
+                <div class="mt-4">
+                    <h5>Copy Message</h5>
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="source-chat-id" placeholder="Enter source chat id" required>
+                            <input type="text" class="form-control" id="target-chat-id" placeholder="Enter target chat id" required>
+                            <button type="button" class="btn btn-warning" onclick="copyMessages()">Copy Messages</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script>
+        function getBotInfoAndMessages() {
+            const botToken = document.getElementById('bot_token').value;
+
+            if (!botToken) {
+                alert("Please enter a bot token.");
+                return;
+            }
+
+            // 获取 Bot 信息
+            fetch(`https://api.telegram.org/bot${botToken}/getMe`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        document.getElementById('bot-username').innerText = data.result.username;
+                    } else {
+                        document.getElementById('error-alert').style.display = 'block';
+                    }
+                })
+
+            // 获取最近消息
+            fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=10&offset=-10`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        const messages = data.result;
+                        if (messages.length === 0) {
+                            document.getElementById('error-alert').style.display = 'block';
+                            return;
+                        }
+                        
+                        // 填充消息表格
+                        const tableBody = document.querySelector('#messages-table tbody');
+                        tableBody.innerHTML = '';  // 清空现有表格数据
+                        messages.forEach((message, index) => {
+
+                        if(message.message != undefined)
+                        {
+                            const row = document.createElement('tr');
+                            const messageFrom = message.message.from;
+                            const chatId = message.message.chat.id;
+                            const username = messageFrom.username || 'Unknown';
+                            const type = message.message.text ? 'Text' : 'Other';  // 这里只处理文本消息，其他类型可以扩展
+                            const messageText = message.message.text || 'No Text';
+                            const date = new Date(message.message.date * 1000).toLocaleString();  // 时间戳转为本地日期
+
+                            row.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${chatId}</td>
+                                <td>${username}</td>
+                                <td>${type}</td>
+                                <td>${messageText}</td>
+                                <td>${date}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        }
+                            
+                        });
+                    } else {
+                        document.getElementById('error-alert').style.display = 'block';
+                    }
+                })
+        }
+
+        function copyMessages() {
+            const botToken = document.getElementById('bot_token').value;
+            const sourceChatId = document.getElementById('source-chat-id').value;
+            const targetChatId = document.getElementById('target-chat-id').value;
+    
+
+            if (!botToken || !sourceChatId || !targetChatId) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            const step = 50;
+
+            for (let msg_id = 1; msg_id < 1000; msg_id += step) {
+                const msg_ids = Array.from({ length: step }, (_, index) => msg_id + index);
+                try {
+                    console.log(msg_id, msg_ids);
+                     // 请求 Telegram API 进行批量消息拷贝
+                    fetch(`https://api.telegram.org/bot${botToken}/copyMessages?chat_id=${targetChatId}&from_chat_id=${sourceChatId}&message_ids=[${msg_ids}]`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.ok) {
+                            console.log('Messages copied successfully!');
+                        } else {
+                            console.log('Failed to copy messages.');
+                        }
+                    });
+                } catch (e) {
+                    continue;
+                }
+            }
+
+           
+        }
+    </script>
+</body>
+</html>
