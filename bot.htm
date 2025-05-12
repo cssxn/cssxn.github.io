@@ -1,4 +1,6 @@
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Bot Trace</title>
@@ -15,8 +17,8 @@
                 <div class="mb-3">
                     <label for="bot_token" class="form-label">Bot Token</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="bot_token" placeholder="Enter bot token" required="">
-                        <button type="button" class="btn btn-info" onclick="getBotInfoAndMessages()">Get Bot Info &amp; Messages</button>
+                        <input type="text" class="form-control" id="bot_token" placeholder="Enter bot token" required>
+                        <button type="button" class="btn btn-info" onclick="getBotInfoAndMessages()">Get Bot Info & Messages</button>
                     </div>
                 </div>
 
@@ -24,7 +26,7 @@
                 <div id="bot-info" class="mt-4">
                     <h5 class="fs-5">Bot Information</h5>
                     <div class="alert alert-info">
-                        <strong>Bot Username:</strong> <span id="bot-username">shootforthestarsaebot</span>
+                        <strong>Bot Username:</strong> <span id="bot-username">Loading...</span>
                     </div>
                 </div>
 
@@ -40,18 +42,13 @@
                             <th>Date</th>
                         </tr>
                     </thead>
-                    <tbody><tr>
-                                <td>1</td>
-                                <td>679947824</td>
-                                <td>FFE44</td>
-                                <td>Text</td>
-                                <td>/start</td>
-                                <td>2025/5/12 17:44:46</td>
-                            </tr></tbody>
+                    <tbody>
+                        <!-- 消息行会在这里填充 -->
+                    </tbody>
                 </table>
 
                 <!-- 错误提示 -->
-                <div id="error-alert" class="alert alert-danger mt-3" role="alert" style="display: block;">
+                <div id="error-alert" class="alert alert-danger mt-3" role="alert" style="display:none;">
                     An error occurred. Please try again!
                 </div>
 
@@ -60,10 +57,10 @@
                     <h5>Copy Message</h5>
                     <div class="mb-3">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="source-chat-id" placeholder="From chat_id" required="">
-                            <input type="text" class="form-control" id="target-chat-id" placeholder="Copy To chat_id" required="">
-                            <input type="text" class="form-control" id="msg-start-id" value="1" placeholder="Message Start ID" required="">
-                            <input type="text" class="form-control" id="msg-end-id" value="1000" placeholder="Message End ID" required="">
+                            <input type="text" class="form-control" id="source-chat-id" placeholder="From chat_id" required>
+                            <input type="text" class="form-control" id="target-chat-id" placeholder="Copy To chat_id" required>
+                            <input type="text" class="form-control" id="msg-start-id" value="1" placeholder="Message Start ID" required>
+                            <input type="text" class="form-control" id="msg-end-id" value="1000" placeholder="Message End ID" required>
                             <button type="button" class="btn btn-warning" onclick="copyMessages()">Copy Messages</button>
                         </div>
                     </div>
